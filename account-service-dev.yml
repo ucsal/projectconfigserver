@@ -4,3 +4,4 @@ custom:
   message: "Bem-vindo ao Account Service - Ambiente de Desenvolvimento!"
 db:
   connection: "jdbc:mysql://dev-db.ucsal.com/contas"
+  password: "{cypher}6c91c2f4a1f61c2a6401ac7230e15cdf70b4bd02fc11197866207"
