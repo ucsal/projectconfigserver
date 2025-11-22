@@ -1,0 +1,5 @@
+server:
+  port: 8085
+db:
+  connection: '{cipher}9449339e07502447d25e4c0528e12151121d15c7' # Criptografia
+message: 'Welcome to Account Service - PRODUCTION MODE'
