@@ -1,5 +1,6 @@
 server:
   port: 8082
+custom:
+  message: "Bem-vindo ao Account Service - Ambiente de Desenvolvimento!"
 db:
-  connection: 'H2 In-Memory DB for Development'
-message: 'Welcome to Account Service - DEVELOPMENT MODE'
+  connection: "jdbc:mysql://dev-db.ucsal.com/contas"
