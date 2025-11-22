@@ -1,0 +1,5 @@
+server:
+  port: 8082
+db:
+  connection: 'H2 In-Memory DB for Development'
+message: 'Welcome to Account Service - DEVELOPMENT MODE'
