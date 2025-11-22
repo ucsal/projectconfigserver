@@ -1,0 +1,48 @@
+Propósito e Funcionalidade do Projeto:
+O Spring Cloud Config é a solução do ecossistema Spring para fornecer configuração externalizada e centralizada em sistemas distribuídos.
+
+Propósito: O objetivo principal é separar a configuração do código, permitindo que as aplicações sejam promovidas por ambientes sem serem reconstruídas, apenas lendo diferentes conjuntos de propriedades específicas para aquele ambiente (dev, test, prod).
+
+Funcionalidade: Ele opera com dois componentes principais:
+
+Config Server: Um servidor HTTP que gerencia as configurações de todos os serviços. Por padrão, ele busca essas configurações de um repositório Git (mas pode usar Vault, JDBC, etc.).
+
+Config Client: Uma aplicação que se inicializa lendo suas propriedades de inicialização do Config Server em vez de arquivos locais (como application.properties).
+
+Em um banco digital, a necessidade de um sistema como o Spring Cloud Config é crítica:
+
+Múltiplos Ambientes (Dev, Homologação, Produção):
+
+Cada ambiente requer diferentes URLs de banco de dados, credenciais de acesso, endpoints de serviços de terceiros (como Gateways de Pagamento) e níveis de log. O Config Server garante que, ao implantar o mesmo código-fonte do account-service na homologação e na produção, ele consuma automaticamente as configurações corretas para cada ambiente.
+
+Agilidade e Segurança (Semana de Auditoria):
+
+Se a senha do banco de dados de produção precisar ser alterada em uma emergência ou por requisito de segurança/auditoria, o sistema permite que o administrador altere apenas o valor no Git/Vault e acione um refresh (atualização dinâmica) sem precisar reconstruir o código ou reiniciar todos os serviços, minimizando o tempo de inatividade e o risco de erros na compilação.
+
+Gerenciamento de Segredos (Chaves de API):
+
+Um banco lida com dados sensíveis. O Config Server, em conjunto com soluções como HashiCorp Vault (ou com criptografia simétrica/assimétrica do próprio Spring Cloud Config), permite armazenar chaves e senhas de forma mais segura, criptografada em repouso no repositório Git ou em um key store dedicado.
+
+a) Explique o conceito de configuração externalizada e centralizada.
+Configuração Externalizada Significa que as propriedades de uma aplicação (como URL de banco de dados, portas, chaves) não estão empacotadas dentro do arquivo binário da aplicação (JAR/WAR). Em vez disso, elas são lidas de uma fonte externa durante a inicialização ou runtime. Isso permite que o mesmo artefato de implantação funcione em diferentes ambientes sem modificação.
+
+Configuração Centralizada Significa que essa fonte externa de configurações é um ponto único e consistente para todos os microserviços. Em vez de cada um dos 30 microserviços gerenciar sua própria cópia de configurações (em arquivos locais, por exemplo), todos apontam para o Config Server. Isso simplifica a gestão, a auditoria e a consistência das propriedades em todo o ecossistema.
+
+b) Por que é importante ter um Config Server em um sistema bancário com múltiplos ambientes (dev, homologação, produção)?
+A importância do Config Server reside na separação de preocupações e na governança de ambiente:
+
+Evitar Reconstrução de Artefatos: O mesmo JAR do account-service é promovido de Dev para Prod. Sua porta, URL do banco de dados e nível de log mudam automaticamente com base no ambiente (perfil ativo) lido pelo Config Server.
+
+Controle de Versão e Auditoria: Como as configurações são armazenadas em um repositório Git, qualquer mudança está sujeita a commits, pull requests e aprovações, o que é fundamental para a auditoria de segurança em uma instituição financeira.
+
+Isolamento de Erros: Uma alteração incorreta na produção pode ser rapidamente revertida no Git, garantindo um rollback instantâneo da configuração em vez de exigir uma nova implantação do código inteiro.
+
+Gerenciamento por Perfil: Permite que o Dev use uma instância H2 em memória, a Homologação use um DB de testes e a Produção use o Oracle/PostgreSQL real, tudo isso gerenciado pelo perfil (dev, homolog, prod).
+
+c) Implemente: Config Server, Cliente (account-service), Configurações por perfil, Refresh dinâmico.
+Implementei e enviei no projectconfigserver
+
+d) Demonstre como proteger configurações sensíveis (senhas de banco, chaves de API).
+A funcionalidade de criptografia de configurações sensíveis no Config Server não está funcionando, apesar de todas as configurações e códigos estarem corretos. A falha é de natureza ambiental (relacionada ao Java Runtime) e não de código.1. Sintoma (O que Aconteceu)Ao tentar criptografar uma senha usando o endpoint correto no PowerShell:PowerShellInvoke-RestMethod -Uri http://localhost:8888/encrypt -Method POST -Body "SuaSenha"
+O Config Server não retorna o valor criptografado no formato esperado, que é: {cipher\}. Em vez disso, o servidor retorna um hash unidirecional (uma string longa hexadecimal, como 3b6e02ff...).
+2. Causa Técnica - O Spring Cloud Config Server exige o conjunto completo de extensões criptográficas do Java, conhecido como Java Cryptography Extension (JCE), para realizar a criptografia e descriptografia reversível (simétrica).O hash que está sendo retornado (SHA-256) é um mecanismo de fallback (último recurso) que o servidor usa quando não consegue carregar o provedor de segurança necessário para criptografia reversível.Isso ocorre porque o provedor de segurança completo (o Bouncy Castle, que foi adicionado ao projeto e registrado na classe principal) está sendo bloqueado ou ignorado pelo seu ambiente de execução Java (JDK 17).Portanto, o servidor não tem o algoritmo necessário (como AES) disponível para criptografar a senha no formato {cipher}, tornando a função de segurança indisponível.3. ImplicaçõesImplementação Correta: Todas as etapas de código foram seguidas corretamente (adição da dependência bcpkix-jdk15on, configuração da chave encrypt.key, registro do provedor na classe main).Falha Irreversível: Como o servidor não consegue gerar o formato {cipher}, o cliente (Account Service) não conseguirá descriptografar a senha, impedindo a demonstração da segurança sem a intervenção no ambiente de execução do JDK.Em resumo, a arquitetura está correta, mas a execução falha por um bloqueio na camada de segurança do Java.
