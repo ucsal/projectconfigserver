@@ -1,0 +1,5 @@
+server:
+  port: 8080
+db:
+  connection: 'Default connection for any environment'
+message: 'This is the default configuration message.'
